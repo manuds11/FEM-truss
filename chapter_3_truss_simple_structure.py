@@ -23,11 +23,6 @@ import pandas as pd
 
 # **************** Classes *****************
 
-class Model():
-    def __init__(self,):
-        return True
-
-
 class Node():
     def __init__(self, global_id, coords, DOFs_restricted, F_applied):
         self.global_id = global_id
