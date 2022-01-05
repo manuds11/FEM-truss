@@ -23,10 +23,110 @@ import pandas as pd
 
 # **************** Classes *****************
 
+class Model():
+    def __init__(self, Model_nodes ,Model_elements):
+        self.nodes = Model_nodes
+        self.elements = Model_elements
+        self.node_DOF = len(Model_nodes[0].GetNodeCoords())
+        self.K_global = np.zeros((np.shape(self.nodes)[0] * self.node_DOF, np.shape(self.nodes)[0] * self.node_DOF))
+        # self.K_reduced = self.K_global
+        self.restrictions = []
+    
+    def GetModelNodes(self):
+        return self.nodes
+    def GetModelElements(self):
+        return self.elements
+    
+    def Assemble_K_global(self, node_DOF = 2):        
+        for element in self.elements:
+            node1, node2 = element.GetElem_NodesIndex()
+            K_elem = element.Get_K_elem()
+            for i in range(np.shape(K_elem)[0]):
+                for j in range(np.shape(K_elem)[0]):
+                    if ((i + 1) <= node_DOF and (j + 1) <= node_DOF):
+                        pivot = (node1 - 1) * node_DOF
+                        self.K_global[pivot + i][pivot + j] += K_elem[i][j]
+                    elif ((i + 1) > node_DOF and (j + 1) > node_DOF):
+                        pivot = (node2 - 1) * node_DOF
+                        self.K_global[pivot + i - 2][pivot + j - 2] += K_elem[i][j]
+                    elif ((i + 1) <= node_DOF and (j + 1) > node_DOF):
+                        pivot_i = (node1 - 1) * node_DOF
+                        pivot_j = (node2 - 1) * node_DOF
+                        self.K_global[pivot_i + i][pivot_j + j - 2] += K_elem[i][j]
+                    elif ((i + 1) > node_DOF and (j + 1) <= node_DOF):
+                        pivot_i = (node2 - 1) * node_DOF
+                        pivot_j = (node1 - 1 ) * node_DOF
+                        self.K_global[pivot_i + i - 2][pivot_j + j] += K_elem[i][j]
+                        
+        return self.K_global
+    
+    def GetRestrictions(self):        
+        for Node in self.nodes:
+            Node_restrictions = Node.GetNodeRestrictions()
+            self.restrictions.append(Node_restrictions[0])
+            self.restrictions.append(Node_restrictions[1])      
+        return self.restrictions
+    
+    def Compute_K_reduced(self):
+        Lines_to_erase = []
+        self.K_reduced = self.K_global
+        for i in range(len(self.restrictions)):
+            if self.restrictions[i]:
+                Lines_to_erase.append(i)
+        for i in reversed(Lines_to_erase):  # Erasing the ith+1 row and column.
+            self.K_reduced = np.delete(self.K_reduced, i, 0); self.K_reduced = np.delete(self.K_reduced, i, 1) 
+        return self.K_reduced
+    
+    def GetAppliedForces(self):
+        self.Applied_F_full = []
+        for Node in self.nodes:
+            Node_Applied_Forces = Node.GetNodeAppliedForces()
+            self.Applied_F_full.append(Node_Applied_Forces[0])
+            self.Applied_F_full.append(Node_Applied_Forces[1])     
+        return self.Applied_F_full
+    
+    def Compute_F_reduced(self):
+        self.F_reduced= self.Applied_F_full.copy()
+        for i in range( len(self.restrictions) - 1, -1, -1 ):
+            if self.restrictions[i]: self.F_reduced.pop(i)        
+        return self.F_reduced
+    
+    def Calculate_Displacements(self):
+        self.disp_reduced = np.linalg.inv(self.K_reduced) @ np.array(self.F_reduced)
+        return self.disp_reduced
+    def ConstructDisp_full(self):
+        self.disp_full = []; j = 0;
+        for i in range(len(self.restrictions)):
+            if self.restrictions[i]:   self.disp_full.append(0.0)
+            else: self.disp_full.append(self.disp_reduced[j]); j += 1;      
+        return np.array(self.disp_full) 
+    
+    def SetNodesDisp(self):
+        node_DOF = self.node_DOF; i = 0
+        for node in self.nodes:
+            node.SetNodeDisp( (self.disp_full[i*node_DOF], self.disp_full[i*node_DOF+1]) )
+            i += 1
+    
+   
+    def CalculateStrains(self):
+        self.Elem_strains = [];
+        for elem in self.elements:
+            self.Elem_strains.append(elem.CalculateElemStrain())
+        return self.Elem_strains
+    def CalculateStresses(self):
+        self.Elem_stresses = []
+        for elem in self.elements:
+            self.Elem_stresses.append(elem.CalculateElemStress())
+        return self.Elem_stresses
+
+    
+
+
 class Node():
     def __init__(self, global_id, coords, DOFs_restricted, F_applied):
         self.global_id = global_id
         self.coords = coords  # Tuple with the X, Y coords of the node in meters
+        self.node_numberOfDOF = len(coords)
         self.DOFs_restricted = DOFs_restricted # If True, the DOF is restricted
         self.F_applied = F_applied # Force is to be specified in Newtons
         # Checks wether an external force is tried to be applied in a restricted DOF
@@ -42,6 +142,8 @@ class Node():
                 
     def GetNodeCoords(self):
         return self.coords    
+    def getNodeNumberOfDOF(self):
+        return self.node_numberOfDOF
     def GetNodeId(self):
         return self.global_id    
     def GetNodeRestrictions(self):
