@@ -24,11 +24,11 @@ import matplotlib.pyplot as plt
 # **************** Classes *****************
 
 class Model():
-    def __init__(self, Model_nodes ,Model_elements):
-        self.nodes = Model_nodes
-        self.elements = Model_elements
-        self.node_DOF = len(Model_nodes[0].GetNodeCoords())
-        self.K_global = np.zeros((np.shape(self.nodes)[0] * self.node_DOF, np.shape(self.nodes)[0] * self.node_DOF))
+    def __init__(self,):
+        self.nodes = []
+        self.elements = []
+        self.node_DOF = 2
+        self.K_global = None
         # self.K_reduced = self.K_global
         self.restrictions = []
         self.AppliedF_full_asColumns = []
@@ -36,6 +36,12 @@ class Model():
         
         self.fig_pre_calc = plt.figure(1)
         self.fig_post_calc = plt.figure(2)
+        
+    def AddNode(self, node):
+        self.nodes.append(node)
+        
+    def AddElement(self, element):
+        self.elements.append(element)
     
     def GetModelNodes(self):
         return self.nodes
@@ -64,7 +70,8 @@ class Model():
         
         return elem_IndexAndNodes
 
-    def Assemble_K_global(self, node_DOF = 2):        
+    def Assemble_K_global(self, node_DOF = 2):
+        self.K_global = np.zeros((np.shape(self.nodes)[0] * self.node_DOF, np.shape(self.nodes)[0] * self.node_DOF))
         for element in self.elements:
             node1, node2 = element.GetElem_NodesIndex()
             K_elem = element.Get_K_elem()
@@ -235,6 +242,9 @@ class Node():
                                     \nRestrictions: {}
                                     \nExternal Forces: {}""".format(self.global_id, self.DOFs_restricted, self.F_applied))
             j += 1
+            
+    def Set_F_applied(self, F_applied):
+        self.F_applied = F_applied
                 
     def GetNodeCoords(self):
         return self.coords    
@@ -348,7 +358,11 @@ def PerformComputations(model):
 
 
 
+def main():
+    return True
 
+if __name__ == "__main__":
+    print(main())
 
 
          

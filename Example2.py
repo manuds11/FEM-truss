@@ -13,22 +13,23 @@ from Truss_simple_structure import *
 # ************** MAIN FUNCTION **************
 
     # Specifying nodes and Model
-Model_nodes = []
-Model_nodes.append( Node(1, (0.0, 0.0), (True, True), (0.0, 0.0)) )
-Model_nodes.append( Node(2, (1.0, 0.0), (False, False), (0.0, -1000)))
-Model_nodes.append( Node(3, (0.0, 1.0) , (True, False), (0.0, 0.0)) )
-Model_nodes.append( Node(4, (2.0, 1.0) , (False, False), (5000, 0.0)) )
+Model_chapt3_ex = Model()
+
+Model_chapt3_ex.AddNode( Node(1, (0.0, 0.0), (True, True), (0.0, 0.0)) )
+Model_chapt3_ex.AddNode( Node(2, (1.0, 0.0), (False, False), (0.0, -1000)))
+Model_chapt3_ex.AddNode( Node(3, (0.0, 1.0) , (True, False), (0.0, 0.0)) )
+Model_chapt3_ex.AddNode( Node(4, (2.0, 1.0) , (False, False), (5000, 0.0)) )
     
     # Specifying elements
-Model_elements = []
-Model_elements.append( Truss_elem(1, Model_nodes[1 - 1], Model_nodes[2 -1 ], 70E9, 0.1) )
-Model_elements.append( Truss_elem(2, Model_nodes[1 - 1], Model_nodes[3 -1 ], 70E9, 0.1) )
-Model_elements.append( Truss_elem(3, Model_nodes[2 - 1], Model_nodes[3 -1 ], 70E9, 0.1) )
-Model_elements.append( Truss_elem(4, Model_nodes[3 - 1], Model_nodes[4 -1 ], 70E9, 0.1) )
-Model_elements.append( Truss_elem(5, Model_nodes[2 - 1], Model_nodes[4 -1 ], 70E9, 0.1) )
+Model_nodes = Model_chapt3_ex.GetModelNodes()
+Model_chapt3_ex.AddElement( Truss_elem(1, Model_nodes[1 - 1], Model_nodes[2 -1 ], 70E9, 0.1) )
+Model_chapt3_ex.AddElement( Truss_elem(2, Model_nodes[1 - 1], Model_nodes[3 -1 ], 70E9, 0.1) )
+Model_chapt3_ex.AddElement( Truss_elem(3, Model_nodes[2 - 1], Model_nodes[3 -1 ], 70E9, 0.1) )
+Model_chapt3_ex.AddElement( Truss_elem(4, Model_nodes[3 - 1], Model_nodes[4 -1 ], 70E9, 0.1) )
+Model_chapt3_ex.AddElement( Truss_elem(5, Model_nodes[2 - 1], Model_nodes[4 -1 ], 70E9, 0.1) )
 
 
-Model_chapt3_ex = Model(Model_nodes, Model_elements)
+
 
 # Performing calculations
 
